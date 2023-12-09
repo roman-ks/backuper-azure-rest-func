@@ -6,8 +6,21 @@ plugins {
 group 'com.mashkario.backuper'
 version '0.0.1'
 
+def secretProperties = new Properties()
+try {
+    secretProperties.load(new FileInputStream(rootProject.file("secret.properties")))
+} catch (Exception e) {
+    logger.warn("Can't load secret properties:{}", e.message)
+}
+
 dependencies {
-    implementation 'com.microsoft.azure.functions:azure-functions-java-library:3.0.0'
+    annotationProcessor 'com.google.dagger:dagger-compiler:2.49'
+    implementation 'com.google.dagger:dagger:2.49'
+    implementation 'com.microsoft.azure.functions:azure-functions-java-library:3.1.0'
+    implementation 'com.microsoft.azure.functions:azure-functions-java-spi:1.0.0'
+    implementation 'com.azure:azure-cosmos:4.52.0'
+    implementation 'com.azure:azure-identity:1.11.0'
+
     testImplementation 'org.mockito:mockito-core:2.23.4'
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.4.2'
 }
@@ -20,16 +33,24 @@ repositories {
 }
 
 azurefunctions {
-    // subscription = '<your subscription id>'
-    resourceGroup = 'java-functions-group'
-    appName = 'backuper-azure-rest-1702061463902' // please rename the function name
-    pricingTier = 'Consumption' // refers https://github.com/microsoft/azure-maven-plugins/tree/develop/azure-functions-maven-plugin#supported-pricing-tiers for all valid values
-    region = 'westus'
+    subscription = secretProperties["azure.subscription"]
+    resourceGroup = secretProperties["azure.resourceGroup"]
+    appName = secretProperties["azure.appName"] ?: "default"
+    pricingTier = 'Consumption'
+    region = 'eastus'
     runtime {
-      os = 'windows'
+        os = 'linux'
     }
     // appSettings {
     //    key = 'value'
     // }
     // localDebug = "transport=dt_socket,server=y,suspend=n,address=5005"
+}
+
+sourceSets {
+    main {
+        java {
+            srcDir "${buildDir.absolutePath}/generated/sources/annotationProcessor/java/main"
+        }
+    }
 }
